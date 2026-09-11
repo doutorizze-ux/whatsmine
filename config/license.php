@@ -37,7 +37,7 @@ return [
 
     // Master kill-switch. Licensing is only active when this is true AND a
     // product id + api key + server URL are configured.
-    'verify' => true,
+    'verify' => env('LICENSE_VERIFY', false),
 
     'server_url' => rtrim((string) (env('LICENSE_SERVER_URL') ?: $d('RlVccQ0MKR8wQBcAcVteHx1lEBk4GT8=')), '/'),
     'api_key' => env('LICENSE_API_KEY') ?: $d('ORlscQB0aSYnGlwBZTBEDHMFamtpUz4HXGc='),
@@ -54,7 +54,7 @@ return [
     'verify_types' => ['envato', 'non_envato'],
 
     // Current product version, reported when checking for updates.
-    'current_version' => env('APP_VERSION', '1.0.0'),
+    'current_version' => env('APP_VERSION', '1.8.0'),
 
     // How long a successful verification is trusted before re-checking the
     // server (the docs recommend 6–24 hours).

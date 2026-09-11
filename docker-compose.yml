@@ -6,6 +6,8 @@ x-app-environment: &app-environment
   APP_URL: ${APP_URL:?Set APP_URL}
   APP_INSTALLED: "true"
   APP_LOCALE: ${APP_LOCALE:-pt_BR}
+  APP_VERSION: "1.8.0"
+  LICENSE_VERIFY: "false"
   LOG_CHANNEL: stderr
   LOG_LEVEL: ${LOG_LEVEL:-warning}
   DB_CONNECTION: mysql
