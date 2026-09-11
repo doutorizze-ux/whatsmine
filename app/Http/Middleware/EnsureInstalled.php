@@ -15,15 +15,6 @@ class EnsureInstalled
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (config('app.installed') || \Illuminate\Support\Facades\Schema::hasTable('admin_users')) {
-            return $next($request);
-        }
-
-        // Let the installer (and its POST endpoints) through.
-        if ($request->is('install', 'install/*')) {
-            return $next($request);
-        }
-
-        return redirect('/install');
+        return $next($request);
     }
 }

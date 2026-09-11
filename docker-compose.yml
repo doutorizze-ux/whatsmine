@@ -4,7 +4,7 @@ x-app-environment: &app-environment
   APP_KEY: ${APP_KEY:?Set APP_KEY}
   APP_DEBUG: "false"
   APP_URL: ${APP_URL:?Set APP_URL}
-  APP_INSTALLED: ${APP_INSTALLED:-false}
+  APP_INSTALLED: "true"
   APP_LOCALE: ${APP_LOCALE:-pt_BR}
   LOG_CHANNEL: stderr
   LOG_LEVEL: ${LOG_LEVEL:-warning}
