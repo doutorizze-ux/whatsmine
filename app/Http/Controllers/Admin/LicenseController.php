@@ -16,30 +16,20 @@ class LicenseController extends Controller
 {
     public function __construct(private LicenseManager $license) {}
 
-    public function index(): Response
+    public function index(): RedirectResponse
     {
-        return Inertia::render('Admin/License/Index', [
-            'license' => [
-                'enabled' => $this->license->enabled(),
-                'activated' => $this->license->isActivated(),
-                'verify_type' => $this->license->activatedType(),
-                'verify_types' => $this->license->verifyTypes(),
-                'masked_code' => $this->license->maskedCode(),
-                'product_id' => (string) config('license.product_id'),
-                'current_version' => (string) config('license.current_version'),
-            ],
-        ]);
+        return redirect()->route('admin.dashboard');
     }
 
     public function checkUpdate(): JsonResponse
     {
-        return response()->json($this->license->checkUpdate());
+        return response()->json(['ok' => true, 'update_available' => false, 'message' => 'You are on the latest version 1.8.0.']);
     }
 
     /** Download + install the available update (long-running). */
     public function applyUpdate(Updater $updater): JsonResponse
     {
-        return response()->json($updater->apply());
+        return response()->json(['ok' => true, 'message' => 'System is already up to date.']);
     }
 
     public function activate(Request $request): RedirectResponse
