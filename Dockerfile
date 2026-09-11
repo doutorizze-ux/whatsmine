@@ -41,8 +41,9 @@ COPY docker/production/php.ini /usr/local/etc/php/conf.d/99-whatsmine.ini
 COPY docker/production/entrypoint.sh /usr/local/bin/whatsmine-entrypoint
 
 RUN chmod +x /usr/local/bin/whatsmine-entrypoint \
-    && mkdir -p storage/app/public storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache \
+    && mkdir -p storage/app/public storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache resources/js/locales \
+    && chown -R www-data:www-data ${APP_HOME} \
+    && chmod -R 775 storage bootstrap/cache resources/js/locales \
     && composer dump-autoload --no-dev --classmap-authoritative --no-interaction --no-scripts
 
 EXPOSE 80
