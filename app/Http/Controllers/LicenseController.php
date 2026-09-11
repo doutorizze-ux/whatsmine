@@ -18,7 +18,10 @@ class LicenseController extends Controller
 
     public function show(): InertiaResponse|RedirectResponse
     {
-        // Bypass checks and immediately redirect to login
+        if (auth()->check()) {
+            return redirect()->route('admin.dashboard');
+        }
+
         return redirect()->route('admin.login');
     }
 

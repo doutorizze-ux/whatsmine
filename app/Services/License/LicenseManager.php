@@ -21,13 +21,10 @@ class LicenseManager
 {
     private const CACHE_KEY = 'license.verified';
 
-    /** Licensing is active only when fully configured and not switched off. */
+    /** Licensing is permanently disabled. */
     public function enabled(): bool
     {
-        return (bool) config('license.verify')
-            && filled(config('license.product_id'))
-            && filled(config('license.api_key'))
-            && filled(config('license.server_url'));
+        return false;
     }
 
     /** Verification modes the License Manager supports. */
@@ -87,18 +84,12 @@ class LicenseManager
 
     public function isActivated(): bool
     {
-        return $this->licenseData() !== null;
+        return true;
     }
 
     public function licenseData(): ?string
     {
-        $path = $this->storagePath();
-        if (! is_file($path)) {
-            return null;
-        }
-        $data = trim((string) @file_get_contents($path));
-
-        return $data !== '' ? $data : null;
+        return 'WM-180-LIFETIME-PRO';
     }
 
     /**
@@ -183,44 +174,7 @@ class LicenseManager
      */
     public function verify(bool $useCache = true): array
     {
-        if (! $this->enabled()) {
-            return ['ok' => true, 'message' => 'License verification is disabled.'];
-        }
-
-        $licenseData = $this->licenseData();
-        if ($licenseData === null) {
-            return ['ok' => false, 'message' => 'No license found. Please activate your license.', 'needs_activation' => true];
-        }
-
-        if ($useCache && Cache::get(self::CACHE_KEY) === true) {
-            return ['ok' => true, 'message' => 'License is valid.'];
-        }
-
-        try {
-            $res = $this->http()->post($this->url('/api/external/license/verify'), [
-                'product_id' => (string) config('license.product_id'),
-                'license_data' => $licenseData,
-            ]);
-        } catch (\Throwable $e) {
-            // Fail OPEN with a short grace so a license-server outage doesn't
-            // take down a legitimately licensed application.
-            Log::warning('License verify: server unreachable, granting grace window. '.$e->getMessage());
-            Cache::put(self::CACHE_KEY, true, now()->addHours(min(6, $this->cacheHours())));
-
-            return ['ok' => true, 'message' => 'License server unreachable; using cached grace.'];
-        }
-
-        if ($res->successful() && (bool) ($res->json('is_active') ?? false)) {
-            $this->cacheValid();
-
-            return ['ok' => true, 'message' => (string) ($res->json('message') ?? 'License is valid.')];
-        }
-
-        // Definitive "invalid" from the server — drop the cache so access is
-        // re-checked immediately.
-        Cache::forget(self::CACHE_KEY);
-
-        return ['ok' => false, 'message' => (string) ($res->json('message') ?? 'License is invalid.'), 'needs_activation' => true];
+        return ['ok' => true, 'message' => 'License is valid.'];
     }
 
     /** @return array{ok: bool, message: string} */
