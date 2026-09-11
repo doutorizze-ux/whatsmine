@@ -86,6 +86,10 @@ class SettingsController extends Controller
 
         if (array_key_exists('locale', $validated) && $validated['locale'] !== null) {
             $user->locale = $validated['locale'];
+            $request->session()->put('locale', $validated['locale']);
+            if ($user->workspace_id && $user->workspace) {
+                $user->workspace->update(['default_locale' => $validated['locale']]);
+            }
         }
         if (array_key_exists('display_currency', $validated) && $validated['display_currency'] !== null) {
             $user->display_currency = $validated['display_currency'];

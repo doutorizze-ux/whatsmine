@@ -16,7 +16,6 @@ export function useLocale() {
     const rtlLocales = props.rtlLocales ?? ['ar'];
 
     const setLocale = (code) => {
-        if (code === locale) return;
         applyLocaleToDocument(code, rtlLocales);
         router.put(route('locale.update'), { locale: code }, { preserveScroll: true });
     };

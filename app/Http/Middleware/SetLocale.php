@@ -29,36 +29,46 @@ class SetLocale
             $defaultCode = $enabledCodes[0] ?? 'en';
         }
 
-        $locale = $defaultCode;
+        $locale = null;
 
-        // 1) Authenticated user preference (web guard = client User)
-        $user = $request->user();
-        if ($user && ! empty($user->locale) && in_array($user->locale, $enabledCodes, true)) {
-            $locale = $user->locale;
-        }
-
-        // 2) Workspace default locale (when no user locale and user has workspace)
-        if ($locale === $defaultCode && $user?->workspace_id) {
-            $workspace = $user->workspace;
-            if ($workspace && $workspace->default_locale && in_array($workspace->default_locale, $enabledCodes, true)) {
-                $locale = $workspace->default_locale;
-            }
-        }
-
-        // 3) Guest/session preference (and admin panel: admin has no locale on model, use session)
-        if ($locale === $defaultCode && $request->hasSession()) {
+        // 1) Explicit Session preference (immediate when switched via Topbar)
+        if ($request->hasSession() && $request->session()->has('locale')) {
             $sessionLocale = $request->session()->get('locale');
             if ($sessionLocale && in_array($sessionLocale, $enabledCodes, true)) {
                 $locale = $sessionLocale;
             }
         }
 
+        // 2) Authenticated user preference (web guard = client User)
+        if (! $locale) {
+            $user = $request->user();
+            if ($user && ! empty($user->locale) && in_array($user->locale, $enabledCodes, true)) {
+                $locale = $user->locale;
+            }
+        }
+
+        // 3) Workspace default locale (when no explicit user/session preference)
+        if (! $locale) {
+            $user = $user ?? $request->user();
+            if ($user?->workspace_id) {
+                $workspace = $user->workspace;
+                if ($workspace && $workspace->default_locale && in_array($workspace->default_locale, $enabledCodes, true)) {
+                    $locale = $workspace->default_locale;
+                }
+            }
+        }
+
         // 4) Cookie for guests (no session)
-        if ($locale === $defaultCode && ! $request->hasSession() && $request->cookie('locale')) {
+        if (! $locale && ! $request->hasSession() && $request->cookie('locale')) {
             $cookieLocale = $request->cookie('locale');
             if (in_array($cookieLocale, $enabledCodes, true)) {
                 $locale = $cookieLocale;
             }
+        }
+
+        // 5) Default locale from DB / System
+        if (! $locale) {
+            $locale = $defaultCode;
         }
 
         // Resolve the RTL flag defensively — the locales table may be

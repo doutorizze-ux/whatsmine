@@ -127,6 +127,10 @@ class LocaleController extends Controller
         }
         Locale::where('is_default', true)->update(['is_default' => false]);
         $locale->update(['is_default' => true]);
+
+        \App\Models\Workspace::query()->update(['default_locale' => $locale->code]);
+        request()->session()->put('locale', $locale->code);
+
         $this->i18nFiles->invalidateCache();
 
         return back()->with('success', $locale->name.' is now the default language.');

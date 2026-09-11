@@ -23,11 +23,15 @@ class LocaleController extends Controller
             'locale' => ['required', 'string', 'in:'.implode(',', $enabledCodes)],
         ]);
 
+        $code = $validated['locale'];
+        $request->session()->put('locale', $code);
+
         $user = $request->user();
         if ($user) {
-            $user->update(['locale' => $validated['locale']]);
-        } else {
-            $request->session()->put('locale', $validated['locale']);
+            $user->update(['locale' => $code]);
+            if ($user->workspace_id && $user->workspace) {
+                $user->workspace->update(['default_locale' => $code]);
+            }
         }
 
         return back();
