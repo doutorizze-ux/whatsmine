@@ -90,7 +90,8 @@ class InboxSetupController extends Controller
     public function embeddedSignupInstagram(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'code' => ['required', 'string', 'max:2048'],
+            'code' => ['nullable', 'string', 'max:2048', 'required_without:access_token'],
+            'access_token' => ['nullable', 'string', 'max:4096', 'required_without:code'],
         ]);
 
         $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
@@ -108,7 +109,9 @@ class InboxSetupController extends Controller
             $warnings[] = 'Webhook registration with Meta failed — inbound messages will NOT arrive until it succeeds: '.$appSub['error'];
         }
 
-        $accessToken = $this->exchangeCodeForToken($validated['code']);
+        $accessToken = ! empty($validated['access_token'])
+            ? $validated['access_token']
+            : $this->exchangeCodeForToken($validated['code']);
         if (! $accessToken) {
             return response()->json(['message' => 'Failed to exchange authorization code with Meta.'], 422);
         }
@@ -228,7 +231,8 @@ class InboxSetupController extends Controller
     public function embeddedSignupMessenger(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'code' => ['required', 'string', 'max:2048'],
+            'code' => ['nullable', 'string', 'max:2048', 'required_without:access_token'],
+            'access_token' => ['nullable', 'string', 'max:4096', 'required_without:code'],
         ]);
 
         $workspaceId = $request->user()->current_workspace_id ?? $request->user()->workspace_id;
@@ -246,7 +250,9 @@ class InboxSetupController extends Controller
             $warnings[] = 'Webhook registration with Meta failed — inbound messages will NOT arrive until it succeeds: '.$appSub['error'];
         }
 
-        $accessToken = $this->exchangeCodeForToken($validated['code']);
+        $accessToken = ! empty($validated['access_token'])
+            ? $validated['access_token']
+            : $this->exchangeCodeForToken($validated['code']);
         if (! $accessToken) {
             return response()->json(['message' => 'Failed to exchange authorization code with Meta.'], 422);
         }

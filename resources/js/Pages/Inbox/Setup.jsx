@@ -556,7 +556,7 @@ function WhatsAppSection({ wabas, webhookGlobalUrl, webhookBaseUrl, webhookToken
     const [waSubmitting, setWaSubmitting] = useState(false);
     const [waMethod, setWaMethod] = useState(metaConfigIdWhatsapp ? 'meta' : 'manual');
 
-    const handleWaEmbeddedCode = useCallback(async (code, wabaId, phoneNumberId = null) => {
+    const handleWaEmbeddedCode = useCallback(async (credential, wabaId, phoneNumberId = null) => {
         setWaApiError(null);
         if (!wabaId) {
             setWaApiError(t('inbox.could_not_detect_waba'));
@@ -571,7 +571,7 @@ function WhatsAppSection({ wabas, webhookGlobalUrl, webhookBaseUrl, webhookToken
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify({ code, waba_id: wabaId, phone_number_id: phoneNumberId }),
+                body: JSON.stringify({ ...credential, waba_id: wabaId, phone_number_id: phoneNumberId }),
             });
             const json = await res.json();
             if (!res.ok) {
@@ -988,13 +988,15 @@ function EmbeddedSignupButton({ configId, appId, channel, label, color, onCode, 
 
         window.FB.login(
             (response) => {
-                if (response.authResponse && response.authResponse.code) {
-                    const code = response.authResponse.code;
+                if (response.authResponse && (response.authResponse.code || response.authResponse.accessToken)) {
+                    const credential = response.authResponse.code
+                        ? { code: response.authResponse.code }
+                        : { access_token: response.authResponse.accessToken };
                     if (isWhatsapp) {
                         sessionInfoPromise
                             .then((info) => {
                                 setLoading(false);
-                                onCode(code, info?.waba_id ?? null, info?.phone_number_id ?? null);
+                                onCode(credential, info?.waba_id ?? null, info?.phone_number_id ?? null);
                             })
                             .catch((e) => {
                                 setLoading(false);
@@ -1004,11 +1006,11 @@ function EmbeddedSignupButton({ configId, appId, channel, label, color, onCode, 
                                     setError(t('inbox.authorization_cancelled'));
                                     return;
                                 }
-                                onCode(code, null, null);
+                                onCode(credential, null, null);
                             });
                     } else {
                         setLoading(false);
-                        onCode(code);
+                        onCode(credential);
                     }
                 } else {
                     setLoading(false);
@@ -1247,7 +1249,7 @@ function AddInstagramForm({ onSuccess, metaConfigIdSocial, metaAppId, metaConfig
     const [method, setMethod] = useState(metaConfigIdSocial ? 'meta' : 'manual');
     const configMismatch = metaConfigIdSocial && metaConfigIdWhatsapp && metaConfigIdSocial === metaConfigIdWhatsapp;
 
-    const handleEmbeddedCode = useCallback(async (code) => {
+    const handleEmbeddedCode = useCallback(async (credential) => {
         setApiError(null);
         setApiWarnings([]);
         setSubmitting(true);
@@ -1259,7 +1261,7 @@ function AddInstagramForm({ onSuccess, metaConfigIdSocial, metaAppId, metaConfig
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify({ code }),
+                body: JSON.stringify(credential),
             });
             const json = await res.json();
             if (!res.ok) {
@@ -1341,7 +1343,7 @@ function AddMessengerForm({ onSuccess, metaConfigIdSocial, metaAppId, metaConfig
     const [method, setMethod] = useState(metaConfigIdSocial ? 'meta' : 'manual');
     const configMismatch = metaConfigIdSocial && metaConfigIdWhatsapp && metaConfigIdSocial === metaConfigIdWhatsapp;
 
-    const handleEmbeddedCode = useCallback(async (code) => {
+    const handleEmbeddedCode = useCallback(async (credential) => {
         setApiError(null);
         setApiWarnings([]);
         setSubmitting(true);
@@ -1353,7 +1355,7 @@ function AddMessengerForm({ onSuccess, metaConfigIdSocial, metaAppId, metaConfig
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify({ code }),
+                body: JSON.stringify(credential),
             });
             const json = await res.json();
             if (!res.ok) {
@@ -1683,5 +1685,3 @@ export default function ChannelSetup({
         </ClientLayout>
     );
 }
-
-
