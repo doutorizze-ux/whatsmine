@@ -86,9 +86,9 @@ class SecureHeaders
             // SDK loads from cdn; runtime sync/scripts also come from api.* (see OneSignal v16 CSP docs).
             $extra .= ' https://cdn.onesignal.com https://*.onesignal.com';
         }
-        if ($this->metaSdkEnabled()) {
-            $extra .= ' https://connect.facebook.net';
-        }
+        // The client-side channel setup loads the Meta SDK before a workspace
+        // connection exists, so this cannot depend on resolving admin credentials.
+        $extra .= ' https://connect.facebook.net';
 
         return $extra;
     }
@@ -118,26 +118,20 @@ class SecureHeaders
             $sources[] = 'https://onesignal.com';
             $sources[] = 'https://*.onesignal.com';
         }
-        if ($this->metaSdkEnabled()) {
-            $sources[] = 'https://graph.facebook.com';
-            $sources[] = 'https://www.facebook.com';
-            $sources[] = 'https://web.facebook.com';
-            $sources[] = 'https://business.facebook.com';
-            // FB JS SDK fetches /app_config/json/{appId}/ from here during init. Without it the
-            // Embedded Signup dialog config never loads and Meta never posts WA_EMBEDDED_SIGNUP.
-            $sources[] = 'https://connect.facebook.net';
-        }
+        // Meta Embedded Signup is initiated from client workspaces before they
+        // have a channel configured, so always allow the SDK and its API origins.
+        $sources[] = 'https://graph.facebook.com';
+        $sources[] = 'https://www.facebook.com';
+        $sources[] = 'https://web.facebook.com';
+        $sources[] = 'https://business.facebook.com';
+        $sources[] = 'https://connect.facebook.net';
 
         return implode(' ', array_unique($sources));
     }
 
-    /** Allow Meta Login / Embedded Signup dialogs in iframes when the Meta App is configured. */
+    /** Allow Meta Login / Embedded Signup dialogs in iframes. */
     private function metaFrameSources(): string
     {
-        if (! $this->metaSdkEnabled()) {
-            return '';
-        }
-
         return ' https://www.facebook.com https://web.facebook.com https://business.facebook.com https://connect.facebook.net';
     }
 
