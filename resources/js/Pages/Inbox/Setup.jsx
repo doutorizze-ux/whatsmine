@@ -971,6 +971,41 @@ function EmbeddedSignupButton({ configId, appId, channel, label, color, onCode, 
         const isWhatsapp = channel === 'whatsapp';
         const sessionInfoPromise = isWhatsapp ? waitForWabaSessionInfo() : Promise.resolve(null);
 
+        // In some Meta Login flows the SDK callback is skipped and the popup
+        // is redirected to the app root with access_token/code in the URL hash.
+        // The root page relays that value through postMessage; consume it here
+        // so Instagram/Messenger setup cannot remain stuck on "Opening Meta…".
+        let oauthMessageHandler = null;
+        let oauthMessageTimer = null;
+        let oauthMessageSettled = false;
+        const cleanupOAuthMessage = () => {
+            if (oauthMessageHandler) {
+                window.removeEventListener('message', oauthMessageHandler);
+                oauthMessageHandler = null;
+            }
+            if (oauthMessageTimer) {
+                clearTimeout(oauthMessageTimer);
+                oauthMessageTimer = null;
+            }
+        };
+
+        if (!isWhatsapp) {
+            oauthMessageHandler = (event) => {
+                if (event.origin !== window.location.origin || oauthMessageSettled) return;
+                const data = event.data ?? {};
+                if (data.type !== 'STAYTOP_META_OAUTH' || (!data.code && !data.access_token)) return;
+
+                oauthMessageSettled = true;
+                cleanupOAuthMessage();
+                setLoading(false);
+                onCode(data.code ? { code: data.code } : { access_token: data.access_token });
+            };
+            window.addEventListener('message', oauthMessageHandler);
+            oauthMessageTimer = setTimeout(() => {
+                cleanupOAuthMessage();
+            }, 120000);
+        }
+
         // The Business Login configuration normally supplies these permissions,
         // but explicitly including them keeps the OAuth request valid in browsers
         // where the Meta SDK falls back to its default `openid` scope.
@@ -989,6 +1024,7 @@ function EmbeddedSignupButton({ configId, appId, channel, label, color, onCode, 
         window.FB.login(
             (response) => {
                 if (response.authResponse && (response.authResponse.code || response.authResponse.accessToken)) {
+                    cleanupOAuthMessage();
                     const credential = response.authResponse.code
                         ? { code: response.authResponse.code }
                         : { access_token: response.authResponse.accessToken };
@@ -1013,6 +1049,7 @@ function EmbeddedSignupButton({ configId, appId, channel, label, color, onCode, 
                         onCode(credential);
                     }
                 } else {
+                    cleanupOAuthMessage();
                     setLoading(false);
                     if (response.status !== 'connected') {
                         setError(t('inbox.authorization_cancelled'));

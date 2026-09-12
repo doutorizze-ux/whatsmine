@@ -30,6 +30,38 @@ function syncCsrfToken(page) {
 
 router.on('success', (event) => syncCsrfToken(event.detail.page));
 
+// Meta's Facebook Login dialog can redirect a popup back to the site's root
+// with the OAuth token in the URL hash (instead of invoking the SDK callback).
+// Relay that result to the opener so channel setup can finish, then close the
+// popup. Without this bridge the client-side button remains stuck on
+// "Opening Meta…" even though Meta has already approved the connection.
+function relayMetaOAuthResult() {
+    if (!window.opener) return;
+
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const queryParams = new URLSearchParams(window.location.search);
+    const accessToken = hashParams.get('access_token') || queryParams.get('access_token');
+    const code = hashParams.get('code') || queryParams.get('code');
+    if (!accessToken && !code) return;
+
+    try {
+        window.opener.postMessage({
+            type: 'STAYTOP_META_OAUTH',
+            ...(code ? { code } : { access_token: accessToken }),
+        }, window.location.origin);
+        window.history.replaceState({}, document.title, window.location.pathname);
+        window.close();
+    } catch (_) {
+        // The opener may have been closed; there is nothing else to do here.
+    }
+}
+
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', relayMetaOAuthResult, { once: true });
+} else {
+    relayMetaOAuthResult();
+}
+
 // Demo mode: every write is rejected server-side by EnsureNotDemoMode with a
 // 403 { code: 'demo_mode' }. Because that is not a valid Inertia response,
 // Inertia fires the cancelable `invalid` event — intercept it to suppress the
