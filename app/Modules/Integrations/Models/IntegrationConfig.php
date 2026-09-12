@@ -221,9 +221,15 @@ class IntegrationConfig extends Model
     public function maskedCredentials(): array
     {
         $creds = $this->credentials ?? [];
+        // These identifiers are public application metadata, not secrets. Keeping
+        // them visible is important for Meta setup because WhatsApp and Social
+        // Embedded Signup must use two distinct configuration IDs.
+        $publicKeys = ['app_id', 'config_id_whatsapp', 'config_id_social'];
         $result = [];
         foreach ($creds as $k => $v) {
-            $result[$k] = (string) $v === '' ? '' : '••••••••••••';
+            $result[$k] = in_array($k, $publicKeys, true)
+                ? (string) $v
+                : ((string) $v === '' ? '' : '••••••••••••');
         }
 
         return $result;
