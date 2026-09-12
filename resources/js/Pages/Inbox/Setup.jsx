@@ -971,6 +971,15 @@ function EmbeddedSignupButton({ configId, appId, channel, label, color, onCode, 
         const isWhatsapp = channel === 'whatsapp';
         const sessionInfoPromise = isWhatsapp ? waitForWabaSessionInfo() : Promise.resolve(null);
 
+        // The Business Login configuration normally supplies these permissions,
+        // but explicitly including them keeps the OAuth request valid in browsers
+        // where the Meta SDK falls back to its default `openid` scope.
+        const scopes = {
+            whatsapp: 'whatsapp_business_management,whatsapp_business_messaging',
+            instagram: 'instagram_basic,instagram_manage_messages,pages_manage_metadata,pages_read_engagement,pages_show_list',
+            messenger: 'pages_messaging,pages_manage_metadata,pages_read_engagement,pages_show_list',
+        };
+
         const extrasMap = {
             whatsapp:  { setup: {}, featureType: '', sessionInfoVersion: '3' },
             instagram: { feature_type: 'instagram_management' },
@@ -1010,6 +1019,7 @@ function EmbeddedSignupButton({ configId, appId, channel, label, color, onCode, 
             },
             {
                 config_id: configId,
+                scope: scopes[channel] ?? '',
                 response_type: 'code',
                 override_default_response_type: true,
                 extras: extrasMap[channel] ?? {},
@@ -1673,6 +1683,5 @@ export default function ChannelSetup({
         </ClientLayout>
     );
 }
-
 
 
